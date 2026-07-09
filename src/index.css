@@ -1,0 +1,353 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Cinematic vignette overlay */
+.cinematic-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.8) 100%);
+  z-index: 100;
+}
+
+/* Film grain overlay */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  z-index: 101;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Metallic text effect */
+.metallic-text {
+  background: linear-gradient(
+    135deg,
+    #8B7355 0%,
+    #D4AF37 20%,
+    #F4E4BC 40%,
+    #D4AF37 60%,
+    #8B7355 80%,
+    #D4AF37 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 60px rgba(212, 175, 55, 0.3);
+}
+
+/* 3D text effect */
+.text-3d {
+  text-shadow: 
+    0 1px 0 #8B7355,
+    0 2px 0 #7a6548,
+    0 3px 0 #69573e,
+    0 4px 0 #584934,
+    0 5px 10px rgba(0,0,0,0.5),
+    0 10px 20px rgba(0,0,0,0.3);
+}
+
+/* Glowing orb effect */
+.voice-orb {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(212, 175, 55, 0.8), transparent 60%),
+              radial-gradient(circle at 70% 70%, rgba(128, 0, 128, 0.6), transparent 60%);
+  box-shadow: 
+    0 0 60px rgba(212, 175, 55, 0.5),
+    0 0 120px rgba(212, 175, 55, 0.3),
+    inset 0 0 60px rgba(212, 175, 55, 0.2);
+  animation: orb-pulse 3s ease-in-out infinite;
+}
+
+@keyframes orb-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 
+      0 0 60px rgba(212, 175, 55, 0.5),
+      0 0 120px rgba(212, 175, 55, 0.3),
+      inset 0 0 60px rgba(212, 175, 55, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 
+      0 0 80px rgba(212, 175, 55, 0.6),
+      0 0 160px rgba(212, 175, 55, 0.4),
+      inset 0 0 80px rgba(212, 175, 55, 0.3);
+  }
+}
+
+/* Waveform animation */
+.waveform-bar {
+  width: 3px;
+  background: linear-gradient(to top, #D4AF37, #F4E4BC);
+  border-radius: 3px;
+  animation: waveform 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes waveform {
+  0% { height: 10px; opacity: 0.5; }
+  100% { height: 40px; opacity: 1; }
+}
+
+/* Rotary wheel styling */
+.rotary-wheel {
+  position: absolute;
+  width: 800px;
+  height: 800px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    #1a1a1a 0deg,
+    #2a2a2a 30deg,
+    #1a1a1a 60deg,
+    #3a3a3a 90deg,
+    #1a1a1a 120deg,
+    #2a2a2a 150deg,
+    #1a1a1a 180deg,
+    #3a3a3a 210deg,
+    #1a1a1a 240deg,
+    #2a2a2a 270deg,
+    #1a1a1a 300deg,
+    #3a3a3a 330deg,
+    #1a1a1a 360deg
+  );
+  border: 8px solid #D4AF37;
+  box-shadow: 
+    0 0 100px rgba(212, 175, 55, 0.3),
+    inset 0 0 100px rgba(0, 0, 0, 0.5);
+}
+
+.rotary-wheel::before {
+  content: '';
+  position: absolute;
+  inset: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #3a3a3a, #1a1a1a);
+  border: 4px solid #8B7355;
+}
+
+.rotary-wheel::after {
+  content: '';
+  position: absolute;
+  inset: 120px;
+  border-radius: 50%;
+  background: #0a0a0a;
+  border: 2px solid #D4AF37;
+}
+
+/* Light rays effect */
+.light-rays {
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(212, 175, 55, 0.03) 10deg,
+    transparent 20deg,
+    rgba(212, 175, 55, 0.02) 30deg,
+    transparent 40deg,
+    rgba(128, 0, 128, 0.03) 50deg,
+    transparent 60deg,
+    rgba(212, 175, 55, 0.02) 70deg,
+    transparent 80deg,
+    rgba(212, 175, 55, 0.03) 90deg,
+    transparent 100deg,
+    rgba(128, 0, 128, 0.02) 110deg,
+    transparent 120deg,
+    rgba(212, 175, 55, 0.03) 130deg,
+    transparent 140deg,
+    rgba(212, 175, 55, 0.02) 150deg,
+    transparent 160deg,
+    rgba(128, 0, 128, 0.03) 170deg,
+    transparent 180deg,
+    rgba(212, 175, 55, 0.02) 190deg,
+    transparent 200deg,
+    rgba(212, 175, 55, 0.03) 210deg,
+    transparent 220deg,
+    rgba(128, 0, 128, 0.02) 230deg,
+    transparent 240deg,
+    rgba(212, 175, 55, 0.03) 250deg,
+    transparent 260deg,
+    rgba(212, 175, 55, 0.02) 270deg,
+    transparent 280deg,
+    rgba(128, 0, 128, 0.03) 290deg,
+    transparent 300deg,
+    rgba(212, 175, 55, 0.02) 310deg,
+    transparent 320deg,
+    rgba(212, 175, 55, 0.03) 330deg,
+    transparent 340deg,
+    rgba(128, 0, 128, 0.02) 350deg,
+    transparent 360deg
+  );
+  animation: rotate 120s linear infinite;
+}
+
+/* Fog layers */
+.fog-layer {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(128, 0, 128, 0.15) 50%, transparent 100%);
+  filter: blur(60px);
+  animation: fog-move 20s ease-in-out infinite;
+}
+
+@keyframes fog-move {
+  0%, 100% { transform: translateX(-10%) scale(1.1); opacity: 0.5; }
+  50% { transform: translateX(10%) scale(1); opacity: 0.8; }
+}
+
+/* Particle glow */
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #D4AF37;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #D4AF37, 0 0 20px #D4AF37;
+  pointer-events: none;
+}
+
+/* Button styles */
+.cinematic-btn {
+  position: relative;
+  padding: 16px 48px;
+  background: transparent;
+  border: 1px solid #D4AF37;
+  color: #D4AF37;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cinematic-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.cinematic-btn:hover::before {
+  left: 100%;
+}
+
+.cinematic-btn:hover {
+  background: rgba(212, 175, 55, 0.1);
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+/* Title reveal animation */
+.title-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(100px) rotateX(-90deg);
+  transform-origin: bottom;
+}
+
+.title-char.revealed {
+  opacity: 1;
+  transform: translateY(0) rotateX(0);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Lens flare */
+.lens-flare {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.4) 0%, rgba(212, 175, 55, 0.1) 30%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+/* Scrollbar hide */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(212, 175, 55, 0.3);
+  color: #FFF8F0;
+}
+
+/* Loading shimmer */
+.shimmer-bg {
+  background: linear-gradient(
+    90deg,
+    rgba(212, 175, 55, 0) 0%,
+    rgba(212, 175, 55, 0.1) 50%,
+    rgba(212, 175, 55, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .voice-orb {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .rotary-wheel {
+    width: 500px;
+    height: 500px;
+  }
+  
+  .cinematic-btn {
+    padding: 12px 32px;
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
