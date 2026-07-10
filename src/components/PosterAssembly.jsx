@@ -96,8 +96,8 @@ const PosterAssembly = ({ isVisible, onComplete }) => {
       ref={containerRef}
       className="absolute inset-0 flex items-center justify-center z-10"
     >
-      {/* Poster container — 4:5 portrait */}
-      <div className="relative w-[320px] md:w-[400px] lg:w-[480px] aspect-[4/5]">
+      {/* Poster container — 4:5 portrait, sized to fit any screen/orientation */}
+      <div className="relative aspect-[4/5]" style={{ width: 'min(86vw, 64vh, 480px)' }}>
         {SLICES.map((slice, i) => (
           <div
             key={i}

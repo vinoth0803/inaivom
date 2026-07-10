@@ -6,6 +6,7 @@ import ParticleBackground from './components/ParticleBackground';
 import FogBackground from './components/FogBackground';
 import VoiceOrb from './components/VoiceOrb';
 import Countdown from './components/Countdown';
+import LogoReveal from './components/LogoReveal';
 import PosterAssembly from './components/PosterAssembly';
 import PosterReveal from './components/PosterReveal';
 
@@ -13,12 +14,13 @@ import useVoiceRecognition from './hooks/useVoiceRecognition';
 import useAudioController from './hooks/useAudioController';
 
 // Scene flow:
-// opening -> listening -> countdown (5..1) -> assembly (4 pieces) ->
-// reveal (full poster + blast) -> final
+// opening -> listening -> countdown (5..1) -> logo reveal (video) ->
+// assembly (4 pieces) -> reveal (full poster + blast) -> final
 const SCENES = {
   OPENING: 'opening',
   LISTENING: 'listening',
   COUNTDOWN: 'countdown',
+  LOGO: 'logo',
   ASSEMBLY: 'assembly',
   REVEAL: 'reveal',
   FINAL: 'final',
@@ -55,8 +57,13 @@ function App() {
     }
   }, [hasPermission, scene, startCountdown]);
 
-  // Countdown finished -> assemble the four poster pieces
+  // Countdown finished -> play the logo reveal video
   const handleCountdownComplete = useCallback(() => {
+    setScene(SCENES.LOGO);
+  }, []);
+
+  // Logo reveal finished -> assemble the four poster pieces
+  const handleLogoComplete = useCallback(() => {
     setScene(SCENES.ASSEMBLY);
   }, []);
 
@@ -74,6 +81,7 @@ function App() {
 
   // Start experience
   const handleStart = useCallback(async () => {
+    if (isStarted) return; // guard against double-tap
     setIsStarted(true);
 
     // Try fullscreen
@@ -97,7 +105,7 @@ function App() {
         startListening();
       },
     });
-  }, [loadAudio, startListening]);
+  }, [isStarted, loadAudio, startListening]);
 
   const handleManualActivate = useCallback(() => {
     manualActivate();
@@ -109,7 +117,10 @@ function App() {
 
   // Render opening scene
   const renderOpening = () => (
-    <div className="opening-content absolute inset-0 flex flex-col items-center justify-center z-20">
+    <div
+      onClick={handleStart}
+      className="opening-content absolute inset-0 flex flex-col items-center justify-center z-20 cursor-pointer"
+    >
       {/* Ambient glow */}
       <div
         className="absolute w-96 h-96 rounded-full opacity-30"
@@ -125,9 +136,9 @@ function App() {
         Let&apos;s unite
       </h1>
 
-      {/* Tap prompt */}
+      {/* Tap prompt (whole screen is tappable; this is the visual affordance) */}
       <button
-        onClick={handleStart}
+        type="button"
         className="group relative px-8 py-4 overflow-hidden"
       >
         <span className="relative z-10 text-warm-white/70 font-inter text-sm tracking-[0.4em] uppercase group-hover:text-metallic-gold transition-colors duration-500">
@@ -192,6 +203,12 @@ function App() {
           isVisible={scene === SCENES.COUNTDOWN}
           from={5}
           onComplete={handleCountdownComplete}
+        />
+
+        {/* Logo reveal video (plays once after the countdown) */}
+        <LogoReveal
+          isVisible={scene === SCENES.LOGO}
+          onComplete={handleLogoComplete}
         />
 
         {/* Vignette overlay */}

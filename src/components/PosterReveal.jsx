@@ -226,7 +226,7 @@ const PosterReveal = ({ isVisible }) => {
 
       {/* Full poster */}
       <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-        <div className="relative w-[320px] md:w-[400px] lg:w-[480px] aspect-[4/5]">
+        <div className="relative aspect-[4/5]" style={{ width: 'min(86vw, 64vh, 480px)' }}>
           <img
             ref={posterRef}
             src={FULL_POSTER}
