@@ -1,101 +1,62 @@
-import { useEffect, useRef } from 'react';
-
+// Lightweight atmospheric fog. Previously this ran a per-pixel noise field on
+// a canvas three times per frame (~1.5M ops/frame) which stalled the launch.
+// This CSS version is GPU-composited and costs effectively zero CPU while
+// keeping the same dark-purple drifting-fog look.
 const FogBackground = ({ isActive = true }) => {
-  const canvasRef = useRef(null);
-  const animationRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !isActive) return;
-
-    const ctx = canvas.getContext('2d');
-    let width, height;
-
-    const resize = () => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-
-    // Fog layers
-    const fogLayers = [
-      { offset: 0, speed: 0.0005, scale: 0.003, opacity: 0.15 },
-      { offset: 1000, speed: 0.0003, scale: 0.005, opacity: 0.1 },
-      { offset: 2000, speed: 0.0007, scale: 0.002, opacity: 0.08 },
-    ];
-
-    // Simple noise function
-    const noise = (x, y) => {
-      return Math.sin(x * 0.01) * Math.cos(y * 0.01) * 0.5 + 0.5;
-    };
-
-    const animate = (time) => {
-      ctx.clearRect(0, 0, width, height);
-
-      // Dark purple base
-      const gradient = ctx.createRadialGradient(
-        width / 2, height / 2, 0,
-        width / 2, height / 2, Math.max(width, height)
-      );
-      gradient.addColorStop(0, '#1a0a1f');
-      gradient.addColorStop(0.5, '#0f0512');
-      gradient.addColorStop(1, '#0a0a0a');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-
-      // Draw fog layers
-      fogLayers.forEach((layer) => {
-        const imageData = ctx.createImageData(width, height);
-        const data = imageData.data;
-
-        for (let y = 0; y < height; y += 4) { // Skip pixels for performance
-          for (let x = 0; x < width; x += 4) {
-            const nx = (x + time * layer.speed + layer.offset) * layer.scale;
-            const ny = (y + time * layer.speed * 0.5) * layer.scale;
-            const n = noise(nx, ny);
-
-            const idx = (y * width + x) * 4;
-            const purpleIntensity = Math.floor(n * layer.opacity * 255);
-
-            // Fill 4x4 block
-            for (let dy = 0; dy < 4 && y + dy < height; dy++) {
-              for (let dx = 0; dx < 4 && x + dx < width; dx++) {
-                const blockIdx = ((y + dy) * width + (x + dx)) * 4;
-                data[blockIdx] = purpleIntensity * 0.5;     // R
-                data[blockIdx + 1] = 0;                      // G
-                data[blockIdx + 2] = purpleIntensity * 0.8; // B
-                data[blockIdx + 3] = purpleIntensity;        // A
-              }
-            }
-          }
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-      });
-
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      window.removeEventListener('resize', resize);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isActive]);
+  if (!isActive) return null;
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    />
+    <div
+      className="fixed inset-0 pointer-events-none overflow-hidden"
+      style={{
+        zIndex: 0,
+        background:
+          'radial-gradient(ellipse at center, #1a0a1f 0%, #0f0512 50%, #0a0a0a 100%)',
+      }}
+    >
+      <div className="fog-blob fog-blob-1" />
+      <div className="fog-blob fog-blob-2" />
+      <div className="fog-blob fog-blob-3" />
+
+      <style>{`
+        .fog-blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(90px);
+          will-change: transform;
+        }
+        .fog-blob-1 {
+          width: 70vw; height: 70vw; left: -15vw; top: -20vh;
+          background: radial-gradient(circle, rgba(90, 0, 100, 0.35), transparent 70%);
+          animation: fog-drift-1 34s ease-in-out infinite;
+        }
+        .fog-blob-2 {
+          width: 60vw; height: 60vw; right: -10vw; top: 20vh;
+          background: radial-gradient(circle, rgba(60, 0, 80, 0.30), transparent 70%);
+          animation: fog-drift-2 42s ease-in-out infinite;
+        }
+        .fog-blob-3 {
+          width: 55vw; height: 55vw; left: 20vw; bottom: -20vh;
+          background: radial-gradient(circle, rgba(40, 0, 55, 0.28), transparent 70%);
+          animation: fog-drift-3 38s ease-in-out infinite;
+        }
+        @keyframes fog-drift-1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50%      { transform: translate(12vw, 10vh) scale(1.15); }
+        }
+        @keyframes fog-drift-2 {
+          0%, 100% { transform: translate(0, 0) scale(1.1); }
+          50%      { transform: translate(-10vw, 8vh) scale(1); }
+        }
+        @keyframes fog-drift-3 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          50%      { transform: translate(8vw, -10vh) scale(1.2); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .fog-blob { animation: none; }
+        }
+      `}</style>
+    </div>
   );
 };
 

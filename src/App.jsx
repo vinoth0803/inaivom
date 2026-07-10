@@ -5,32 +5,31 @@ import { Volume2, VolumeX } from 'lucide-react';
 import ParticleBackground from './components/ParticleBackground';
 import FogBackground from './components/FogBackground';
 import VoiceOrb from './components/VoiceOrb';
-import RotaryWheel from './components/RotaryWheel';
-import TitleReveal from './components/TitleReveal';
+import Countdown from './components/Countdown';
 import PosterAssembly from './components/PosterAssembly';
-import EventInfo from './components/EventInfo';
+import PosterReveal from './components/PosterReveal';
 
 import useVoiceRecognition from './hooks/useVoiceRecognition';
 import useAudioController from './hooks/useAudioController';
 
-// Scene constants
+// Scene flow:
+// opening -> listening -> countdown (5..1) -> assembly (4 pieces) ->
+// reveal (full poster + blast) -> final
 const SCENES = {
   OPENING: 'opening',
   LISTENING: 'listening',
-  ACTIVATION: 'activation',
-  TITLE_REVEAL: 'title_reveal',
-  POSTER_ASSEMBLY: 'poster_assembly',
-  EVENT_INFO: 'event_info',
+  COUNTDOWN: 'countdown',
+  ASSEMBLY: 'assembly',
+  REVEAL: 'reveal',
   FINAL: 'final',
 };
 
 function App() {
   const [scene, setScene] = useState(SCENES.OPENING);
   const [isStarted, setIsStarted] = useState(false);
-  
+
   const containerRef = useRef(null);
-  const shakeRef = useRef(null);
-  
+
   const {
     isListening,
     isSupported,
@@ -41,83 +40,42 @@ function App() {
     manualActivate,
   } = useVoiceRecognition('inaivom ondraga');
 
-  const {
-    isMuted,
-    isLoaded,
-    loadAudio,
-    toggleMute,
-    transitionToScene,
-    playBassImpact,
-  } = useAudioController();
+  const { isMuted, loadAudio, toggleMute, startMusic, playImpact } = useAudioController();
 
-  // Handle voice activation
+  // Voice recognized -> impact + music + countdown
+  const startCountdown = useCallback(() => {
+    setScene(SCENES.COUNTDOWN);
+    playImpact();
+    startMusic();
+  }, [playImpact, startMusic]);
+
   useEffect(() => {
     if (hasPermission && scene === SCENES.LISTENING) {
-      triggerActivation();
+      startCountdown();
     }
-  }, [hasPermission, scene]);
+  }, [hasPermission, scene, startCountdown]);
 
-  // Screen shake effect
-  const triggerShake = useCallback(() => {
-    if (shakeRef.current) {
-      gsap.to(shakeRef.current, {
-        x: [-10, 10, -8, 8, -5, 5, 0],
-        y: [-5, 5, -3, 3, 0],
-        duration: 0.5,
-        ease: 'power2.out',
-      });
-    }
+  // Countdown finished -> assemble the four poster pieces
+  const handleCountdownComplete = useCallback(() => {
+    setScene(SCENES.ASSEMBLY);
   }, []);
 
-  // Activation sequence
-  const triggerActivation = useCallback(() => {
-    setScene(SCENES.ACTIVATION);
-    
-    // Stop all current audio
-    transitionToScene('activation');
-    
-    // Screen shake
-    triggerShake();
-    
-    // Sequence the next scenes
-    const tl = gsap.timeline();
-    
-    // Brief pause
-    tl.to({}, { duration: 0.5 });
-    
-    // Transition to title reveal
-    tl.call(() => {
-      setScene(SCENES.TITLE_REVEAL);
-      transitionToScene('reveal');
-    });
-    
-    // Title reveal duration
-    tl.to({}, { duration: 3 });
-    
-    // Transition to poster assembly
-    tl.call(() => {
-      setScene(SCENES.POSTER_ASSEMBLY);
-    });
-    
-    // Poster assembly duration
-    tl.to({}, { duration: 2.5 });
-    
-    // Transition to event info
-    tl.call(() => {
-      setScene(SCENES.EVENT_INFO);
-    });
-    
-    // Final state
-    tl.to({}, { duration: 1 });
-    tl.call(() => {
-      setScene(SCENES.FINAL);
-    });
-  }, [triggerShake, transitionToScene]);
+  // Drive assembly -> reveal -> final on timers.
+  useEffect(() => {
+    if (scene === SCENES.ASSEMBLY) {
+      const t = setTimeout(() => setScene(SCENES.REVEAL), 2200);
+      return () => clearTimeout(t);
+    }
+    if (scene === SCENES.REVEAL) {
+      const t = setTimeout(() => setScene(SCENES.FINAL), 2600);
+      return () => clearTimeout(t);
+    }
+  }, [scene]);
 
   // Start experience
   const handleStart = useCallback(async () => {
     setIsStarted(true);
-    
+
     // Try fullscreen
     try {
       if (document.documentElement.requestFullscreen) {
@@ -126,26 +84,28 @@ function App() {
     } catch (e) {
       console.log('Fullscreen not supported');
     }
-    
-    // Load audio
+
+    // Prepare audio (nothing plays yet — mic stays clean while listening)
     await loadAudio();
-    
-    // Fade out opening
+
+    // Fade out opening, then start listening
     gsap.to('.opening-content', {
       opacity: 0,
       duration: 1,
       onComplete: () => {
         setScene(SCENES.LISTENING);
         startListening();
-        transitionToScene('listening');
       },
     });
-  }, [loadAudio, startListening, transitionToScene]);
+  }, [loadAudio, startListening]);
 
-  // Manual fallback activation
   const handleManualActivate = useCallback(() => {
     manualActivate();
   }, [manualActivate]);
+
+  const posterVisible =
+    scene === SCENES.ASSEMBLY || scene === SCENES.REVEAL || scene === SCENES.FINAL;
+  const revealVisible = scene === SCENES.REVEAL || scene === SCENES.FINAL;
 
   // Render opening scene
   const renderOpening = () => (
@@ -159,12 +119,12 @@ function App() {
           animation: 'pulse 4s ease-in-out infinite',
         }}
       />
-      
+
       {/* Title */}
-      <h1 className="font-cinzel text-4xl md:text-6xl lg:text-7xl font-bold metallic-text tracking-[0.3em] mb-12">
-        INAIVOM
+      <h1 className="font-cinzel text-4xl md:text-6xl lg:text-7xl font-bold metallic-text tracking-[0.15em] mb-12 text-center px-4">
+        Let&apos;s unite
       </h1>
-      
+
       {/* Tap prompt */}
       <button
         onClick={handleStart}
@@ -206,102 +166,44 @@ function App() {
     </div>
   );
 
-  // Render activation scene
-  const renderActivation = () => (
-    <div className="absolute inset-0 flex items-center justify-center z-20">
-      {/* Particle explosion effect */}
-      <div className="relative">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-metallic-gold rounded-full"
-            style={{
-              animation: `particle-burst 1s ease-out forwards`,
-              animationDelay: `${i * 0.02}s`,
-              transform: `rotate(${i * 18}deg) translateX(0)`,
-              '--burst-distance': `${100 + Math.random() * 100}px`,
-            }}
-          />
-        ))}
-      </div>
-      
-      <style>{`
-        @keyframes particle-burst {
-          0% {
-            transform: rotate(var(--rotation, 0deg)) translateX(0) scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: rotate(var(--rotation, 0deg)) translateX(var(--burst-distance, 100px)) scale(0);
-            opacity: 0;
-          }
-        }
-      `}</style>
-    </div>
-  );
-
   return (
     <div
       ref={containerRef}
       className="relative w-full h-full overflow-hidden bg-matte-black"
     >
-      {/* Screen shake container */}
-      <div ref={shakeRef} className="absolute inset-0">
+      <div className="absolute inset-0">
         {/* Background layers */}
         <FogBackground isActive={true} />
-        <ParticleBackground 
-          intensity={scene === SCENES.LISTENING ? 'low' : 'high'} 
+        <ParticleBackground
+          intensity={scene === SCENES.LISTENING ? 'low' : 'high'}
           isActive={isStarted}
         />
-        
-        {/* Rotary wheel */}
-        <RotaryWheel 
-          isVisible={scene === SCENES.TITLE_REVEAL || 
-                    scene === SCENES.POSTER_ASSEMBLY || 
-                    scene === SCENES.EVENT_INFO || 
-                    scene === SCENES.FINAL} 
-        />
-        
-        {/* Title reveal */}
-        <TitleReveal 
-          isVisible={scene === SCENES.TITLE_REVEAL || 
-                     scene === SCENES.POSTER_ASSEMBLY || 
-                     scene === SCENES.EVENT_INFO || 
-                     scene === SCENES.FINAL}
-        />
-        
-        {/* Poster assembly */}
-        <PosterAssembly 
-          isVisible={scene === SCENES.POSTER_ASSEMBLY || 
-                     scene === SCENES.EVENT_INFO || 
-                     scene === SCENES.FINAL}
-        />
-        
-        {/* Event info */}
-        <EventInfo 
-          isVisible={scene === SCENES.EVENT_INFO || scene === SCENES.FINAL}
-        />
-        
+
+        {/* Poster pieces assembling */}
+        <PosterAssembly isVisible={posterVisible} />
+
+        {/* Full poster reveal + popper blast */}
+        <PosterReveal isVisible={revealVisible} />
+
         {/* Scene-specific content */}
         {scene === SCENES.OPENING && renderOpening()}
         {scene === SCENES.LISTENING && renderListening()}
-        {scene === SCENES.ACTIVATION && renderActivation()}
-        
+        <Countdown
+          isVisible={scene === SCENES.COUNTDOWN}
+          from={5}
+          onComplete={handleCountdownComplete}
+        />
+
         {/* Vignette overlay */}
         <div className="cinematic-vignette" />
-        
+
         {/* Film grain */}
         <div className="film-grain" />
-        
+
         {/* Light rays */}
-        {(scene === SCENES.TITLE_REVEAL || 
-          scene === SCENES.POSTER_ASSEMBLY || 
-          scene === SCENES.EVENT_INFO || 
-          scene === SCENES.FINAL) && (
-          <div className="light-rays" />
-        )}
+        {revealVisible && <div className="light-rays" />}
       </div>
-      
+
       {/* Audio controls */}
       {isStarted && (
         <button
@@ -311,7 +213,6 @@ function App() {
           {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
         </button>
       )}
-      
     </div>
   );
 }

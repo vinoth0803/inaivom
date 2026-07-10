@@ -76,15 +76,12 @@ const ParticleBackground = ({ intensity = 'high', isActive = true }) => {
           ? `rgba(212, 175, 55, ${particle.opacity})`
           : `rgba(128, 0, 128, ${particle.opacity * 0.5})`;
 
-        // Draw paper-like particle
+        // Draw paper-like particle with a single glow fill.
         ctx.fillStyle = color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = color;
         ctx.beginPath();
         ctx.rect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
-        ctx.fill();
-
-        // Glow effect
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = color;
         ctx.fill();
 
         ctx.restore();
