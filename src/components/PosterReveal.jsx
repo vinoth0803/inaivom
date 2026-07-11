@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 
 // The full, seamless poster that fades in over the four assembled pieces.
-// Save it as public/poster/full.png (same 4:5 artwork, uncut).
-const FULL_POSTER = '/poster/full.png';
+// Save it as public/poster/full.jpg (same 4:5 artwork, uncut).
+const FULL_POSTER = '/poster/full.jpg';
 
 // Warm fire palette (RGB) for the ember blast.
 const FIRE_COLORS = [
@@ -14,8 +14,11 @@ const FIRE_COLORS = [
   [255, 45, 0],
 ];
 
-const EMBER_COUNT = 220;
-const SMOKE_COUNT = 30;
+const IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(
+  typeof navigator !== 'undefined' ? navigator.userAgent : ''
+);
+const EMBER_COUNT = IS_MOBILE ? 110 : 220;
+const SMOKE_COUNT = IS_MOBILE ? 16 : 30;
 const DURATION = 2600; // ms
 
 // Pre-bake a radial glow sprite so we can drawImage() instead of paying for

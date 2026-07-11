@@ -201,10 +201,23 @@ const useVoiceRecognition = (targetPhrase = 'inaivom ondraga') => {
       return;
     }
 
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      startAudioAnalysis(stream);
+      // The orb visualiser opens its own mic stream. On mobile that stream
+      // holds the microphone exclusively, so SpeechRecognition can't hear you
+      // (mic shows "on" but nothing is recognised). Skip the visualiser on
+      // mobile and let recognition own the mic; keep it on desktop where the
+      // mic can be shared.
+      if (!isMobile) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          streamRef.current = stream;
+          startAudioAnalysis(stream);
+        } catch (micErr) {
+          console.warn('[voice] visualiser mic unavailable:', micErr?.name || micErr);
+        }
+      }
 
       shouldListenRef.current = true;
       try {

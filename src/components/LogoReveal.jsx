@@ -1,36 +1,38 @@
 import { useEffect, useRef } from 'react';
 
 // Plays your logo-reveal video once, then advances to the poster assembly.
-// Drop your file(s) into public/logo/ (WebM preferred for transparency;
-// MP4 as a fallback):
-//   public/logo/reveal.webm
-//   public/logo/reveal.mp4
-const LOGO_SOURCES = [
-  { src: '/logo/reveal.webm', type: 'video/webm' },
-  { src: '/logo/reveal.mp4', type: 'video/mp4' },
-];
+// Drop your file into public/logo/reveal.mp4 (H.264 MP4 recommended).
+const LOGO_SRC = '/logo/reveal.mp4';
 
 // Safety cap: if the "ended" event never fires (e.g. missing file), move on.
 const SAFETY_MS = 20000;
 
-const LogoReveal = ({ isVisible, onComplete }) => {
+// `active`  -> mount + start buffering the video (do this early so it's ready)
+// `isVisible` -> actually show and play it
+const LogoReveal = ({ active, isVisible, onComplete }) => {
   const videoRef = useRef(null);
   const doneRef = useRef(false);
 
+  const finish = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    if (onComplete) onComplete();
+  };
+
+  // Start buffering as soon as the experience begins.
   useEffect(() => {
-    if (!isVisible) {
-      doneRef.current = false;
-      return;
+    if (active && videoRef.current) {
+      videoRef.current.load();
     }
+  }, [active]);
+
+  // Play only once the scene becomes visible (it's already buffered by then).
+  useEffect(() => {
+    if (!isVisible) return;
 
     doneRef.current = false;
-    const finish = () => {
-      if (doneRef.current) return;
-      doneRef.current = true;
-      if (onComplete) onComplete();
-    };
-
     const video = videoRef.current;
+
     if (video) {
       try {
         video.currentTime = 0;
@@ -38,42 +40,41 @@ const LogoReveal = ({ isVisible, onComplete }) => {
         /* noop */
       }
       const p = video.play();
-      // If autoplay is blocked or the file is missing, skip to the assembly.
-      if (p && p.catch) p.catch(() => finish());
-    } else {
-      finish();
+      if (p && p.catch) {
+        p.catch((err) => console.warn('[logo] play() rejected (continuing):', err?.name || err));
+      }
     }
 
-    // Fallback timer in case the video never signals "ended".
     const timer = setTimeout(finish, SAFETY_MS);
     return () => clearTimeout(timer);
-  }, [isVisible, onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]);
 
-  if (!isVisible) return null;
-
-  const handleFinish = () => {
-    if (!doneRef.current) {
-      doneRef.current = true;
-      if (onComplete) onComplete();
-    }
-  };
+  // Not started yet -> don't mount (nothing to buffer).
+  if (!active) return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-30 bg-black">
+    <div
+      className="absolute inset-0 flex items-center justify-center bg-black"
+      style={{
+        zIndex: isVisible ? 30 : -1,
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: 'none',
+      }}
+    >
       <video
         ref={videoRef}
         className="w-full h-full object-contain"
+        src={LOGO_SRC}
         muted
         playsInline
-        autoPlay
         preload="auto"
-        onEnded={handleFinish}
-        onError={handleFinish}
-      >
-        {LOGO_SOURCES.map((s) => (
-          <source key={s.src} src={s.src} type={s.type} />
-        ))}
-      </video>
+        onEnded={finish}
+        onError={() => {
+          console.warn(`[logo] video error — skipping to poster. Check ${LOGO_SRC}`);
+          if (isVisible) finish();
+        }}
+      />
     </div>
   );
 };

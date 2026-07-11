@@ -7,6 +7,7 @@ import FogBackground from './components/FogBackground';
 import VoiceOrb from './components/VoiceOrb';
 import Countdown from './components/Countdown';
 import LogoReveal from './components/LogoReveal';
+import Fireworks from './components/Fireworks';
 import PosterAssembly from './components/PosterAssembly';
 import PosterReveal from './components/PosterReveal';
 
@@ -187,8 +188,11 @@ function App() {
         <FogBackground isActive={true} />
         <ParticleBackground
           intensity={scene === SCENES.LISTENING ? 'low' : 'high'}
-          isActive={isStarted}
+          isActive={isStarted && scene !== SCENES.LOGO}
         />
+
+        {/* Sky-shot fireworks behind the poster during the reveal */}
+        <Fireworks isVisible={revealVisible} />
 
         {/* Poster pieces assembling */}
         <PosterAssembly isVisible={posterVisible} />
@@ -205,8 +209,9 @@ function App() {
           onComplete={handleCountdownComplete}
         />
 
-        {/* Logo reveal video (plays once after the countdown) */}
+        {/* Logo reveal video — mounts early to pre-buffer, plays after countdown */}
         <LogoReveal
+          active={isStarted}
           isVisible={scene === SCENES.LOGO}
           onComplete={handleLogoComplete}
         />
